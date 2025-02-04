@@ -49,6 +49,8 @@ int main(int argc, char **argv)
         token = strtok(NULL, delim);
     }
 
+    ht_remove(&ht, "lucas");
+
 
     Arena words = {0};
     Entry *p = (Entry *) arena_allocate(&words, sizeof(Entry) * ht_get_nitems(ht));

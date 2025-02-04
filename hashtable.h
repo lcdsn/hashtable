@@ -154,6 +154,7 @@ int *ht_remove(HashTable *ht, char *key)
         i = j;
     }
 
+    ht->items--;
     return 0;
 }
 
