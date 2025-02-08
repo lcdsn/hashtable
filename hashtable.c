@@ -37,24 +37,30 @@ int main(int argc, char **argv)
     // Copy the contents
     fread(s, size, 1, fp);
 
+    // Create the hash table
     HashTable ht = {0};
+    ht.arena = &arena;
 
-    char *delim = " \n\t\r\",.;:-";
+    // tokenize and insert into the hash table
+    char *delim = " \n\t\r";
     char *token = strtok(s, delim);
     uint64_t count = 0;
     while (token) {
-        void *v = ht_lookup(&ht, token);
+        void *v = ht_get(&ht, token);
         count = v ? *((uint64_t *) v) + 1 : 1;
         ht_set(&ht, token, count);
         token = strtok(NULL, delim);
     }
 
+    // just for fun
     ht_remove(&ht, "lucas");
 
 
+    // Allocate enough space for all hash table entries
     Arena words = {0};
     Entry *p = (Entry *) arena_allocate(&words, sizeof(Entry) * ht_get_nitems(ht));
 
+    // Copy the entries
     Entry *q = p;
     for (size_t i = 0; i < ht_get_size(ht); i++) {
         if (ht.data[i].valid) {
@@ -63,6 +69,7 @@ int main(int argc, char **argv)
         }
     }
 
+    // sort the words
     qsort(p, ht_get_nitems(ht), sizeof(Entry), compar);
     
     printf("number of words: %zu\n", ht_get_nitems(ht));

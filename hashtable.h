@@ -18,7 +18,7 @@ typedef struct {
 typedef struct {
     size_t items;
     size_t size;
-    Arena arena;
+    Arena *arena;
     Entry *data;
 } HashTable;
 
@@ -32,7 +32,7 @@ void rehash(HashTable **ht);
 size_t _ht_set(HashTable *ht, char *key, void *value, size_t n);
 int is_valid(HashTable *ht, size_t i);
 
-void *ht_lookup(HashTable *ht, char *key);
+void *ht_get(HashTable *ht, char *key);
 int *ht_remove(HashTable *ht, char *key);
 int ht_lenght(HashTable ht);
 void ht_destroy(HashTable *ht);
@@ -76,6 +76,7 @@ void rehash(HashTable **ht)
 {
     HashTable *new = calloc(1, sizeof(HashTable));
     new->size = (*ht)->size ? (*ht)->size*2 : 256;
+    new->arena = (*ht)->arena ? (*ht)->arena : malloc(sizeof(Arena));
     new->data = calloc(new->size, sizeof(Entry));
 
     if (!new->data) {
@@ -86,6 +87,8 @@ void rehash(HashTable **ht)
     for (size_t i = 0; i < (*ht)->size; i++)
         if (is_valid(*ht, i))
             _ht_set(new, (*ht)->data[i].key, (*ht)->data[i].value, sizeof(void*));
+
+    (*ht)->arena = NULL; // Prevent arena_destroy from freeing the memory
     ht_destroy(*ht);
     **ht = *new;
 }
@@ -97,18 +100,18 @@ size_t _ht_set(HashTable *ht, char *key, void *value, size_t n)
         rehash(&ht);
     }
 
-    if (!ht_lookup(ht, key)) {
-        key = alloc(&ht->arena, key, strlen(key)+1);
+    if (!ht_get(ht, key)) {
+        key = alloc(ht->arena, key, strlen(key)+1);
         ht->items++;
     }
 
-    value = alloc(&ht->arena, value, n);
+    value = alloc(ht->arena, value, n);
     size_t pos = find_slot(ht, key);
     ht->data[pos] = (Entry) { key, value, true };
     return pos;
 }
 
-void *ht_lookup(HashTable *ht, char *key)
+void *ht_get(HashTable *ht, char *key)
 {
     int i = find_slot(ht, key);
     if (i >= 0 && is_valid(ht, i))
@@ -160,7 +163,9 @@ int *ht_remove(HashTable *ht, char *key)
 
 void ht_destroy(HashTable *ht)
 {
-    arena_destroy(&ht->arena);
+    if (ht->arena)
+        arena_destroy(ht->arena);
+
     free(ht->data);
 }
 

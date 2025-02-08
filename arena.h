@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 #ifndef ALIGN
-#define ALIGN 1024 * 1024 * 1024
+#define ALIGN 1024*2
 #endif
 
 typedef struct region {
@@ -32,7 +32,7 @@ char *arena_allocate(Arena *a, size_t n)
 
     if (!*rp) {
         int m = ((n + ALIGN - 1) & ~(ALIGN - 1));
-        *rp = calloc(1, m);
+        *rp = malloc(m);
 
         if (!*rp) {
             fprintf(stderr, "Couldn't find memory.\n");
